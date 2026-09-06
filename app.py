@@ -5,41 +5,350 @@ st.set_page_config(page_title="Agentic QE Requirement Advisor", layout="wide")
 st.title("🏦 Agentic QE Requirement Advisor")
 st.caption("AI-Powered BFS Requirement Quality Engineering Assistant")
 
+# ---------- Session State Defaults ----------
+defaults = {
+    "requirement_text": "",
+    "requirement_id": "REQ-001",
+    "auto_score": True,
+    "clarity": 75,
+    "completeness": 70,
+    "testability": 72,
+    "manual_quality_score": 72.3,
+    "pci_dss": False,
+    "auth_controls": False,
+    "audit_trail": False,
+    "fraud_prevention": False,
+    "ai_advisory": None,
+    "advisory_report_text": "",
+}
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+
+def bounded(score: float) -> int:
+    return max(0, min(100, int(round(score))))
+
+
+def keyword_hits(text: str, keywords: list[str]) -> int:
+    t = text.lower()
+    return sum(1 for kw in keywords if kw in t)
+
+
+def analyze_requirement(text: str) -> dict:
+    t = text.lower().strip()
+    text_len = len(t)
+
+    clarity_hits = keyword_hits(t, ["must", "shall", "required"])
+    completeness_hits = keyword_hits(t, ["validate", "mandatory", "field", "input"])
+    testability_hits = keyword_hits(t, ["test", "verify", "expected"])
+
+    structure_hits = keyword_hits(t, ["if", "when", "then", "within"])
+    measurable_hits = keyword_hits(t, ["%", "seconds", "ms", "days", "hours"])
+    has_digits = any(ch.isdigit() for ch in t)
+
+    clarity = 45 + (clarity_hits * 12) + (structure_hits * 4) + (5 if has_digits else 0)
+    completeness = 40 + (completeness_hits * 12) + (structure_hits * 3)
+    testability = 40 + (testability_hits * 12) + (measurable_hits * 6) + (5 if has_digits else 0)
+
+    if text_len >= 120:
+        clarity += 8
+        completeness += 10
+        testability += 8
+
+    clarity = bounded(clarity)
+    completeness = bounded(completeness)
+    testability = bounded(testability)
+    quality_score = round((clarity + completeness + testability) / 3, 1)
+
+    pci_dss = keyword_hits(t, ["pci", "pci dss", "cardholder"]) > 0
+    auth_controls = keyword_hits(t, ["authentication", "auth", "login", "password", "mfa", "otp"]) > 0
+    audit_trail = keyword_hits(t, ["audit", "audit trail", "log", "trace"]) > 0
+    fraud_prevention = keyword_hits(t, ["fraud", "suspicious", "anomaly", "velocity"]) > 0
+
+    if text_len < 50:
+        risk_level = "High"
+        readiness = "Low"
+    else:
+        risk_level = "Low" if quality_score >= 75 else "Medium" if quality_score >= 50 else "High"
+        readiness = "High" if quality_score >= 85 else "Medium" if quality_score >= 70 else "Low"
+
+    return {
+        "clarity": clarity,
+        "completeness": completeness,
+        "testability": testability,
+        "quality_score": quality_score,
+        "risk_level": risk_level,
+        "readiness": readiness,
+        "pci_dss": pci_dss,
+        "auth_controls": auth_controls,
+        "audit_trail": audit_trail,
+        "fraud_prevention": fraud_prevention,
+    }
+
+
+def build_ai_advisory(text: str, analyzed: dict) -> dict:
+    t = text.lower().strip()
+
+    strengths = []
+    identified_gaps = []
+    compliance_notes = []
+    recommended_next_actions = []
+
+    if analyzed["clarity"] >= 75:
+        strengths.append("Requirement uses clear directive language (e.g., must/shall/required).")
+    if analyzed["completeness"] >= 75:
+        strengths.append("Good coverage of inputs/validation details is indicated.")
+    if analyzed["testability"] >= 75:
+        strengths.append("Testability cues are present (test/verify/expected/measurable terms).")
+    if len(t) >= 120:
+        strengths.append("Requirement has adequate detail length for downstream analysis.")
+    if not strengths:
+        strengths.append("Baseline intent is present and can be strengthened with clearer acceptance details.")
+
+    if len(t) < 50:
+        identified_gaps.append("Requirement is too short; scope, rules, and outcomes are likely incomplete.")
+    if analyzed["clarity"] < 70:
+        identified_gaps.append("Ambiguous phrasing detected; add specific and measurable wording.")
+    if analyzed["completeness"] < 70:
+        identified_gaps.append("Missing completeness signals (mandatory fields, validation, business rules).")
+    if analyzed["testability"] < 70:
+        identified_gaps.append("Expected outcomes/test conditions are not explicit enough.")
+    if "error" not in t and "exception" not in t:
+        identified_gaps.append("Error/exception handling is not explicitly defined.")
+    if not identified_gaps:
+        identified_gaps.append("No major critical gaps detected at this rule-based level.")
+
+    compliance_notes.append(f"PCI DSS: {'Detected' if analyzed['pci_dss'] else 'Not Detected'}")
+    compliance_notes.append(
+        f"Authentication Controls: {'Detected' if analyzed['auth_controls'] else 'Not Detected'}"
+    )
+    compliance_notes.append(f"Audit Trail: {'Detected' if analyzed['audit_trail'] else 'Not Detected'}")
+    compliance_notes.append(
+        f"Fraud Prevention: {'Detected' if analyzed['fraud_prevention'] else 'Not Detected'}"
+    )
+
+    recommended_next_actions.append("Add/confirm acceptance criteria with explicit expected outcomes.")
+    recommended_next_actions.append("Add positive, negative, and boundary test conditions.")
+    if not analyzed["pci_dss"]:
+        recommended_next_actions.append("Clarify PCI DSS impact and cardholder-data handling requirements.")
+    if not analyzed["auth_controls"]:
+        recommended_next_actions.append("Define authentication/authorization controls (e.g., MFA, role checks).")
+    if not analyzed["audit_trail"]:
+        recommended_next_actions.append("Specify audit trail logging fields and retention expectations.")
+    if not analyzed["fraud_prevention"]:
+        recommended_next_actions.append("Include fraud-prevention checks (velocity/anomaly/risk rules).")
+    if analyzed["risk_level"] == "High":
+        recommended_next_actions.append("Run BA-QE clarification before development due to high requirement risk.")
+
+    return {
+        "strengths": strengths,
+        "identified_gaps": identified_gaps,
+        "compliance_notes": compliance_notes,
+        "recommended_next_actions": recommended_next_actions,
+    }
+
+
+def _bullet_lines(items: list[str]) -> str:
+    return "\n".join([f"- {item}" for item in items]) if items else "- None"
+
+
+def generate_advisory_report(requirement_id: str, text: str, analyzed: dict, advisory: dict) -> str:
+    t = text.lower().strip()
+
+    confirmed_information = []
+    if any(k in t for k in ["must", "shall", "required"]):
+        confirmed_information.append("Directive/mandatory language is present.")
+    if any(ch.isdigit() for ch in t):
+        confirmed_information.append("Quantitative values are present in the requirement.")
+    if "if" in t or "when" in t or "then" in t:
+        confirmed_information.append("Conditional/flow structure keywords are present.")
+    if not confirmed_information:
+        confirmed_information.append("Baseline business intent is provided in requirement text.")
+
+    assumptions = []
+    if not any(k in t for k in ["user", "customer", "system", "application", "service"]):
+        assumptions.append("Primary actor/system is assumed and should be explicitly stated.")
+    if "within" not in t and "seconds" not in t and "ms" not in t and "hours" not in t and "days" not in t:
+        assumptions.append("Performance/response-time expectations are assumed but not explicit.")
+    if "error" not in t and "exception" not in t:
+        assumptions.append("Error and exception behavior is assumed but not documented.")
+    if not assumptions:
+        assumptions.append("No major assumptions identified at this rule-based level.")
+
+    clarification_needed = []
+    if len(t) < 50:
+        clarification_needed.append("Expand requirement scope and expected outcome details.")
+    if analyzed["clarity"] < 70:
+        clarification_needed.append("Clarify ambiguous statements using measurable language.")
+    if analyzed["completeness"] < 70:
+        clarification_needed.append("Clarify mandatory fields, business rules, and validation logic.")
+    if analyzed["testability"] < 70:
+        clarification_needed.append("Clarify expected outcomes and pass/fail criteria.")
+    if not clarification_needed:
+        clarification_needed.append("No critical clarification blockers detected.")
+
+    missing_business_rules = []
+    if "validate" not in t and "validation" not in t:
+        missing_business_rules.append("Input validation/business validation rules are not explicit.")
+    if "mandatory" not in t and "required" not in t:
+        missing_business_rules.append("Mandatory vs optional field behavior is not explicit.")
+    if "error" not in t and "exception" not in t:
+        missing_business_rules.append("Error/exception handling rules are missing.")
+    if "duplicate" not in t and "unique" not in t:
+        missing_business_rules.append("Duplicate/uniqueness handling rules are missing.")
+    if not missing_business_rules:
+        missing_business_rules.append("No obvious missing business rules detected by current heuristics.")
+
+    compliance_notes = advisory["compliance_notes"]
+
+    acceptance_criteria = [
+        "Given a valid input payload and required fields are provided, "
+        "When the request is submitted, Then the system processes successfully and returns the expected result.",
+        "Given invalid or missing mandatory input, "
+        "When the request is submitted, Then the system rejects it with a clear validation message.",
+        "Given a security/compliance-relevant transaction, "
+        "When processing occurs, Then authentication checks and audit logging are enforced.",
+    ]
+
+    test_scenarios = {
+        "Positive": [
+            "Submit complete and valid data; verify successful processing.",
+            "Verify expected outcome aligns with stated business intent.",
+        ],
+        "Negative": [
+            "Submit missing mandatory fields; verify validation errors.",
+            "Submit invalid format/type values; verify rejection and error messaging.",
+        ],
+        "Boundary": [
+            "Test minimum allowed input values/lengths.",
+            "Test maximum allowed input values/lengths.",
+        ],
+        "Security": [
+            "Verify unauthorized access is blocked.",
+            "Verify audit trail entry is generated for key actions.",
+            "Verify compliance control flags for PCI/authentication/fraud where applicable.",
+        ],
+    }
+
+    recommendations = advisory["recommended_next_actions"][:]
+    recommendations.append("Validate final requirement with BA, QE, and compliance stakeholders.")
+    recommendations.append("Baseline this report as pre-development quality evidence.")
+
+    improvement_points = round(100 - float(analyzed["quality_score"]), 1)
+    improvement_potential = (
+        "Low" if analyzed["quality_score"] >= 85 else "Medium" if analyzed["quality_score"] >= 70 else "High"
+    )
+
+    report = f"""Agentic QE Requirement Advisor - Advisory Report
+Requirement ID: {requirement_id}
+Generated From: Rule-based analysis of user-entered requirement text
+
+Requirement Text:
+{text}
+
+1. Executive Snapshot
+- Quality Score: {analyzed['quality_score']}/100
+- Readiness: {analyzed['readiness']}
+- Risk Level: {analyzed['risk_level']}
+- Improvement Potential: {improvement_points} pts ({improvement_potential})
+
+2. Confirmed Information
+{_bullet_lines(confirmed_information)}
+
+3. Assumptions
+{_bullet_lines(assumptions)}
+
+4. Clarification Needed
+{_bullet_lines(clarification_needed)}
+
+5. Missing Business Rules
+{_bullet_lines(missing_business_rules)}
+
+6. Compliance Notes
+{_bullet_lines(compliance_notes)}
+
+7. Acceptance Criteria (Given / When / Then)
+- AC1: {acceptance_criteria[0]}
+- AC2: {acceptance_criteria[1]}
+- AC3: {acceptance_criteria[2]}
+
+8. Test Scenarios
+- Positive
+{_bullet_lines(test_scenarios['Positive'])}
+- Negative
+{_bullet_lines(test_scenarios['Negative'])}
+- Boundary
+{_bullet_lines(test_scenarios['Boundary'])}
+- Security
+{_bullet_lines(test_scenarios['Security'])}
+
+9. Recommendations
+{_bullet_lines(recommendations)}
+"""
+    return report
+
+
 # ---------- Requirement Input ----------
-requirement_text = st.text_area(
+st.text_area(
     "Requirement Text",
+    key="requirement_text",
     placeholder="Paste the requirement, user story, or BRD excerpt here before scoring...",
     height=180,
 )
+
+# ---------- Analyze Button ----------
+if st.button("Analyze Requirement", type="primary", use_container_width=True):
+    req_text = st.session_state.requirement_text.strip()
+    if not req_text:
+        st.warning("Please paste requirement text before analyzing.")
+    else:
+        analyzed = analyze_requirement(req_text)
+        st.session_state.clarity = analyzed["clarity"]
+        st.session_state.completeness = analyzed["completeness"]
+        st.session_state.testability = analyzed["testability"]
+        st.session_state.manual_quality_score = analyzed["quality_score"]
+        st.session_state.pci_dss = analyzed["pci_dss"]
+        st.session_state.auth_controls = analyzed["auth_controls"]
+        st.session_state.audit_trail = analyzed["audit_trail"]
+        st.session_state.fraud_prevention = analyzed["fraud_prevention"]
+
+        advisory = build_ai_advisory(req_text, analyzed)
+        st.session_state.ai_advisory = advisory
+        st.session_state.advisory_report_text = generate_advisory_report(
+            st.session_state.requirement_id, req_text, analyzed, advisory
+        )
+
+        st.success("Analysis complete. Scores, snapshot, compliance, advisory report, and charts updated.")
 
 # ---------- Inputs ----------
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    requirement_id = st.text_input("Requirement ID", value="REQ-001")
+    requirement_id = st.text_input("Requirement ID", key="requirement_id")
 with col2:
-    auto_score = st.toggle("Auto-calculate Quality Score", value=True)
+    auto_score = st.toggle("Auto-calculate Quality Score", key="auto_score")
 
 c1, c2, c3 = st.columns(3)
 with c1:
-    clarity = st.slider("Clarity Score", 0, 100, 75)
+    clarity = st.slider("Clarity Score", 0, 100, key="clarity")
 with c2:
-    completeness = st.slider("Completeness Score", 0, 100, 70)
+    completeness = st.slider("Completeness Score", 0, 100, key="completeness")
 with c3:
-    testability = st.slider("Testability Score", 0, 100, 72)
+    testability = st.slider("Testability Score", 0, 100, key="testability")
 
 calculated_quality = round((clarity + completeness + testability) / 3, 1)
-quality_score = (
-    calculated_quality
-    if auto_score
-    else st.number_input(
+if auto_score:
+    quality_score = calculated_quality
+    st.session_state.manual_quality_score = calculated_quality
+else:
+    quality_score = st.number_input(
         "Quality Score",
         min_value=0.0,
         max_value=100.0,
-        value=float(calculated_quality),
         step=0.1,
+        key="manual_quality_score",
     )
-)
 
 # ---------- Risk logic ----------
 def risk_level(score: float) -> str:
@@ -50,12 +359,14 @@ def risk_level(score: float) -> str:
     return "Low"
 
 
-def readiness_level(score: float) -> str:
+def readiness_level(score: float, text: str) -> str:
+    if len(text.strip()) < 50:
+        return "Low"
     if score >= 85:
-        return "Ready"
+        return "High"
     if score >= 70:
-        return "Partially Ready"
-    return "Not Ready"
+        return "Medium"
+    return "Low"
 
 
 def improvement_band(score: float) -> str:
@@ -66,12 +377,15 @@ def improvement_band(score: float) -> str:
     return "High"
 
 
+requirement_text = st.session_state.requirement_text
 ambiguity_risk = risk_level(clarity)
 coverage_gap_risk = risk_level(completeness)
 validation_risk = risk_level(testability)
 overall_risk = risk_level(quality_score)
+if len(requirement_text.strip()) < 50 and requirement_text.strip():
+    overall_risk = "High"
 
-readiness = readiness_level(quality_score)
+readiness = readiness_level(quality_score, requirement_text)
 improvement_points = round(100 - float(quality_score), 1)
 improvement_potential = f"{improvement_points} pts ({improvement_band(quality_score)})"
 
@@ -83,17 +397,39 @@ e2.metric("Readiness", readiness)
 e3.metric("Risk Level", overall_risk)
 e4.metric("Improvement Potential", improvement_potential)
 
+# ---------- AI Advisory Summary ----------
+st.subheader("AI Advisory Summary")
+advisory = st.session_state.get("ai_advisory")
+if advisory:
+    st.markdown("**1. Strengths**")
+    for item in advisory["strengths"]:
+        st.markdown(f"- {item}")
+
+    st.markdown("**2. Identified Gaps**")
+    for item in advisory["identified_gaps"]:
+        st.markdown(f"- {item}")
+
+    st.markdown("**3. Compliance Notes**")
+    for item in advisory["compliance_notes"]:
+        st.markdown(f"- {item}")
+
+    st.markdown("**4. Recommended Next Actions**")
+    for item in advisory["recommended_next_actions"]:
+        st.markdown(f"- {item}")
+else:
+    st.markdown("Run **Analyze Requirement** to generate advisory insights.")
+
 # ---------- BFS Compliance Assessment ----------
 st.subheader("BFS Compliance Assessment")
 b1, b2, b3, b4 = st.columns(4)
 with b1:
-    pci_dss = st.checkbox("PCI DSS")
+    pci_dss = st.checkbox("PCI DSS", key="pci_dss")
 with b2:
-    auth_controls = st.checkbox("Authentication Controls")
+    auth_controls = st.checkbox("Authentication Controls", key="auth_controls")
 with b3:
-    audit_trail = st.checkbox("Audit Trail")
+    audit_trail = st.checkbox("Audit Trail", key="audit_trail")
 with b4:
-    fraud_prevention = st.checkbox("Fraud Prevention")
+    fraud_prevention = st.checkbox("Fraud Prevention", key="fraud_prevention")
 
 controls = [pci_dss, auth_controls, audit_trail, fraud_prevention]
 coverage_pct = round((sum(controls) / len(controls)) * 100, 1)
@@ -133,7 +469,24 @@ chart_df = pd.DataFrame(
 ).set_index("Dimension")
 st.bar_chart(chart_df)
 
+# ---------- Advisory Report ----------
+st.subheader("Advisory Report")
+report_text = st.session_state.get("advisory_report_text", "")
+if report_text:
+    st.text_area("Generated Advisory Report", value=report_text, height=520)
+    safe_req_id = (requirement_id or "requirement").replace(" ", "_")
+    st.download_button(
+        label="Download Advisory Report",
+        data=report_text,
+        file_name=f"{safe_req_id}_advisory_report.txt",
+        mime="text/plain",
+        use_container_width=True,
+    )
+else:
+    st.info("Run **Analyze Requirement** to generate the advisory report.")
+
 if requirement_text.strip():
     st.caption(f"Requirement text captured ({len(requirement_text)} characters).")
 else:
     st.caption("No requirement text provided yet.")
+    
