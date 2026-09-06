@@ -1,0 +1,44 @@
+Agentic QE Requirement Advisor-Milestones
+
+Phase 1:
+
+- M365 Agent exported ( https://m365.cloud.microsoft/chat/?titleId=T_079de53d-7ed9-e4af-cf64-28b7194d6836&source=embedded-builder)
+- GitHub Copilot configured
+- Architecture documented
+
+Phase 2:
+
+-Exported declarative agent assets
+-Configuration preserved in JSON
+
+Phase 3-Enhancements(Current state-Git installation blocked):
+
+-Streamlit dashboard----------Prototype Completed
+-Quality score visualizations-Completed
+-GitHub Copilot + VS Code-----In progress
+-Requirement repository integration-Completed
+-BFS domain packs-------------Covered the logic in M365 Agent
+-Advanced reporting/visualization--Completed the basic version
+-Expanded roadmap-------------Completed
+
+This agent had been designed to perform QE-oriented tasks such as:
+
+✅ Requirement Analysis
+✅ BFS Compliance Review
+✅ Test Effort Estimation
+✅ Requirement Rewriting
+✅ Missing Business Rule Detection
+✅ Test Case Creation
+
+
+- **Agent Name:** Agentic QE Requirement Advisor, focused on BFS requirement quality engineering.  
+- **Core Purpose:** Improve requirement clarity, completeness, testability, and delivery readiness.  
+- **Primary QE Functions:** Requirement analysis, rewriting, missing rule detection, test case creation, and effort estimation.  
+- **Compliance Focus:** Performs BFS-oriented compliance and control checks (including security/audit perspectives).  
+- **Operating Style:** Works in structured review/authoring workflows with standardized output sections.  
+- **Scoring Approach:** Produces quality/readiness-style assessments with risk and improvement guidance.  
+- **Manifest/Config State:** Declarative agent assets exported and JSON configuration preserved.  
+- **Tooling Setup:** Integrated with GitHub Copilot and Visual Studio Code for development workflows.  
+- **Current Enhancements (Phase 3):** Streamlit dashboard, quality score visualizations, requirement repository integration, BFS domain packs, and advanced reporting.  
+- **Project Progress:** Phase 1 and Phase 2 completed; Phase 3 enhancements are the current active state with an expanded roadmap.
+

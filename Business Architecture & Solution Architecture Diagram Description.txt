@@ -1,0 +1,124 @@
+### BFS AI Hackathon — Business Architecture & Solution Architecture Diagram Description
+
+## 1) Business Architecture (Presentation Narrative)
+
+**Diagram title:** *Agentic QE Requirement Advisor – Business Architecture (BFS)*
+
+**What to show in the diagram (left to right):**
+1. **Business Drivers**
+   - Faster release cycles
+   - Lower requirement ambiguity
+   - Early compliance-by-design
+   - Defect prevention before build/test
+
+2. **Stakeholders**
+   - Product Owner / Business Analyst
+   - QE Lead / Test Architect
+   - Risk & Compliance (BFS controls)
+   - Engineering Delivery Teams
+
+3. **Core Business Capabilities**
+   - Requirement quality assessment
+   - Requirement rewriting/authoring
+   - BFS compliance control coverage checks
+   - Test readiness artifact generation
+   - Risk/readiness scoring and reporting
+
+4. **Operating Process (Value Stream)**
+   - Intake requirement → Analyze quality → Detect gaps/risks → Generate improved requirement + QE artifacts → Reassess readiness → Publish dashboard
+
+5. **Business Outcomes**
+   - Higher requirement quality score
+   - Reduced requirement defects leakage
+   - Better test coverage and faster UAT readiness
+   - Improved audit/security control visibility
+
+6. **Success KPIs**
+   - % requirements “Ready for Dev/Test”
+   - Quality score uplift (before vs after)
+   - Reduction in clarification cycles
+   - Defects prevented (estimated)
+
+---
+
+## 2) Solution Architecture (Presentation Narrative)
+
+**Diagram title:** *Agentic QE Requirement Advisor – Solution Architecture*
+
+**What to show in the diagram (top-down or left-right):**
+1. **Channels / Entry Points**
+   - M365 Declarative Agent chat
+   - VS Code + Copilot workflow
+   - Optional Streamlit dashboard (visualization)
+
+2. **Agent Core**
+   - Mode Selector: Review Mode / Authoring Mode
+   - Instruction Orchestrator (strict sectioned outputs)
+   - Scoring Engine (quality/readiness/risk)
+   - BFS Control Evaluator (PCI, Auth, Audit, Fraud)
+
+3. **Artifact Generation Layer**
+   - Improved requirement draft
+   - Acceptance criteria (Given/When/Then)
+   - Validation rules
+   - NFRs + security requirements
+   - Test scenarios (positive/negative/boundary/security/fraud/integration/compliance)
+
+4. **Data/Integration Layer (Current + Roadmap)**
+   - Current: prompt input + manifest config
+   - Planned: requirement repository integration, BFS domain packs, advanced reporting
+
+5. **Output Layer**
+   - Executive snapshot
+   - Risk indicators and maturity/readiness signals
+   - Requirement health dashboard
+
+6. **Governance & Controls**
+   - Explicit separation: confirmed vs assumptions vs clarification needed
+   - No external mutation by default (`actions: []`)
+   - Traceable, evidence-based scoring
+
+---
+
+## 3) Optional Mermaid Diagrams (for PPT export)
+
+````mermaid
+flowchart LR
+    A[Business Drivers] --> B[Stakeholders]
+    B --> C[Business Capabilities]
+    C --> D[QE Value Stream]
+    D --> E[Business Outcomes]
+    E --> F[KPIs]
+
+    A1[Faster Release] --> A
+    A2[Lower Ambiguity] --> A
+    A3[Compliance by Design] --> A
+
+    B1[BA/PO] --> B
+    B2[QE Lead] --> B
+    B3[Risk & Compliance] --> B
+    B4[Engineering] --> B
+
+    C1[Requirement Assessment] --> C
+    C2[Requirement Rewriting] --> C
+    C3[BFS Control Checks] --> C
+    C4[Test Artifact Generation] --> C
+````
+
+````mermaid
+flowchart TD
+    U[User Input: Requirement/Story] --> CH[Channel: M365 / VS Code]
+    CH --> MS[Mode Selector: Review vs Authoring]
+    MS --> ORCH[Instruction Orchestrator]
+    ORCH --> SCORE[Scoring Engine]
+    ORCH --> BFS[BFS Control Evaluator]
+    SCORE --> GEN[Artifact Generator]
+    BFS --> GEN
+    GEN --> OUT[Structured Output + Dashboard]
+    OUT --> KPI[Quality Uplift / Readiness / Risk]
+
+    R1[Requirement Repository - Planned] -.-> ORCH
+    R2[BFS Domain Packs - Planned] -.-> BFS
+    R3[Advanced Reporting - Planned] -.-> OUT
+````
+

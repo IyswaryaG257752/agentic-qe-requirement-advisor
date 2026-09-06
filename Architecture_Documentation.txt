@@ -1,0 +1,225 @@
+====================================================
+HIGH-LEVEL SOLUTION FLOW
+====================================================
+
+User Input: Requirement / User Story
+        ↓
+Channel: M365 Copilot Agent / VS Code / Streamlit
+        ↓
+Mode Selector (Review Mode / Authoring Mode)
+        ↓
+Instruction Orchestrator
+        ↓
+Scoring Engine
+        ↓
+BFS Control Evaluator
+        ↓
+Artifact Generator
+        ↓
+Structured Output + Dashboard
+        ↓
+Quality Uplift / Readiness / Risk
+
+Planned Future Enhancements:
+- Requirement Repository Integration
+- BFS Domain Packs
+- Advanced Reporting
+______________________________________________________________________________________________
+
+
+# Agentic QE Requirement Advisor — Architecture Documentation
+
+## 1. Purpose
+
+The **Agentic QE Requirement Advisor** is a declarative AI agent for BFS requirement quality engineering.  
+It evaluates and improves requirements/user stories for:
+
+- clarity and completeness
+- testability and readiness
+- BFS security/compliance coverage
+- QE artifact generation (AC, validation rules, NFRs, security requirements, test scenarios)
+
+---
+
+## 2. System Context
+
+### Platform
+- Implemented as a **declarative agent manifest** (`declarativeAgent_0.json`)
+- Runs in a conversational AI host that supports:
+  - instruction-driven orchestration
+  - conversation starters
+  - optional capability tools (here: `CodeInterpreter`)
+
+### Primary Users
+- Business Analysts
+- Quality Engineers / Test Architects
+- Product Owners / Delivery teams in BFS domain
+
+---
+
+## 3. High-Level Architecture
+
+```mermaid
+flowchart TD
+    U[User Prompt] --> S[Mode Selection]
+    S -->|Existing requirement| R[Review Mode Engine]
+    S -->|Idea/refine/rewrite| A[Authoring Mode Engine]
+    R --> X[Shared Executive Panel + Scoring]
+    A --> X
+    X --> O[Ordered Output Composer]
+    O --> Y[Final Structured Response]
+    C[Conversation Starters] --> U
+    T[CodeInterpreter Capability] -. optional support .-> R
+    T -. optional support .-> A
+```
+
+---
+
+## 4. Core Architectural Components
+
+## 4.1 Manifest Layer
+Defined in JSON root fields:
+
+- `version`, `id`, `name`, `description`
+- `actions` (currently empty)
+- `conversation_starters`
+- `instructions` (primary orchestration policy)
+- `capabilities` (`CodeInterpreter`)
+
+## 4.2 Prompt Orchestration Layer
+Driven by `instructions`; contains:
+
+- **Mode Selector**
+  - routes to **Review Mode** or **Authoring Mode**
+- **Shared Assessment Rules**
+  - evidence-based scoring
+  - strict handling of unknowns (`Not specified`, `Needs Assessment`, `Not Applicable`)
+- **Shared Executive Panel**
+  - fixed labels/order for score, readiness, maturity, risk, expected improvement
+- **Output Order Enforcer**
+  - guarantees deterministic section sequence per mode
+
+## 4.3 Domain Logic Layer (BFS QE)
+Applies BFS-specific controls:
+
+- PCI DSS impact screening
+- authentication control checks
+- audit trail requirement checks
+- fraud prevention control checks
+
+## 4.4 Artifact Generation Layer
+Produces structured deliverables:
+
+- improved requirement draft/rewrite
+- acceptance criteria (Given/When/Then)
+- validation rules
+- NFRs
+- security requirements
+- test scenarios (positive/negative/boundary/error/security/fraud/integration/compliance)
+
+---
+
+## 5. Processing Flow
+
+1. User submits requirement text or authoring request.
+2. Mode selector classifies request:
+   - **Review Mode** for evaluation of provided content.
+   - **Authoring Mode** for create/rewrite/refine requests.
+3. Shared rules evaluate original input first (no premature enhancement).
+4. Executive snapshot is computed from original wording.
+5. Mode-specific sections are generated in mandated order.
+6. Enhanced output is reassessed and improvement is shown.
+
+---
+
+## 6. Output Contract
+
+The architecture enforces **strict section ordering**.
+
+### Review Mode (key outputs)
+- Executive Snapshot
+- Expected Improvement
+- Impact Analysis
+- Compliance review
+- Review-and-Improvement Package
+- Enhanced reassessment
+- Value dashboard
+
+### Authoring Mode (key outputs)
+- Executive Snapshot
+- Expected Improvement
+- Missing info/assumptions
+- Clarification questions
+- Enhanced draft and user story
+- QE/security/NFR artifacts
+- Enhanced reassessment
+- Value dashboard
+
+---
+
+## 7. Data and Control Boundaries
+
+## 7.1 Inputs
+- Natural-language requirement/story/BRD excerpt/feature description
+- Optional user intent (analyze, rewrite, estimate, etc.)
+
+## 7.2 Outputs
+- Text-only structured analysis and generated QE artifacts
+- No external system mutation (since `actions` is empty)
+
+## 7.3 Constraints
+- Must distinguish:
+  - Confirmed Information
+  - Assumptions
+  - Clarification Needed
+  - AI-Suggested content
+- Must not present invented business facts as confirmed
+
+---
+
+## 8. Non-Functional Architecture Characteristics
+
+- **Determinism:** section-order templates reduce response drift
+- **Traceability:** scoring and risks tied to requirement evidence
+- **Auditability:** explicit unknown/assumption labels
+- **Extensibility:** future tools can be added via `actions` and/or more capabilities
+- **Safety:** avoids over-claiming by mandatory uncertainty markers
+
+---
+
+## 9. Extensibility Roadmap
+
+1. Add `actions` for:
+   - requirement repository retrieval
+   - policy/rulebook lookup
+   - defect taxonomy mapping
+2. Add structured output schema (JSON mode) for tool-chain ingestion.
+3. Add domain packs (cards, lending, payments, AML/KYC) as modular instruction blocks.
+4. Add scoring rubric versioning for governance and model drift control.
+
+---
+
+## 10. Risks and Limitations
+
+- Quality of output depends on quality/completeness of user input.
+- Numeric scoring is rubric-based and not a formal compliance certification.
+- With no external actions configured, evidence is limited to prompt content.
+- If policy text is changed without version governance, scoring consistency may drift.
+
+---
+
+## 11. Versioning and Governance
+
+- Current manifest version: `v1.8`
+- Recommended governance:
+  - semantic versioning for rubric changes
+  - changelog per instruction update
+  - regression prompts to verify output order and labeling rules
+
+---
+
+## 12. Summary
+
+This agent uses a **template-governed, mode-driven architecture** focused on BFS requirement quality.  
+Its main strength is consistent, evidence-based review + authoring outputs with explicit compliance/security/QE coverage and clear readiness signaling.
+

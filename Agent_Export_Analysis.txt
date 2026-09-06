@@ -1,0 +1,185 @@
+257752_cgcp: Explain this declarativeAgent_0.json file and summarize the capabilities of the agent.
+
+GitHub Copilot: ### What this declarativeAgent_0.json does
+
+This file defines a **custom declarative agent** named **“Agentic QE Requirement Advisor”** for BFS (Banking/Financial Services) requirement quality engineering.
+
+It contains:
+
+- **Metadata**
+  - `version`: `v1.8`
+  - `id`: unique agent identifier
+  - `name`: `Agentic QE Requirement Advisor`
+  - `description`: positions the agent as a BFS-focused BA + QE advisor
+
+- **Actions**
+  - `actions: []` → no external/custom actions are configured.
+
+- **Conversation starters**
+  - Prebuilt prompts for:
+    - requirement analysis
+    - BFS compliance review
+    - test effort estimation
+    - story rewriting
+    - missing-rule detection
+    - test case generation
+
+- **Core instructions (system behavior)**
+  - Defines two operating modes:
+    - **Review Mode** (evaluate existing requirement text)
+    - **Authoring Mode** (create/refine requirements from an idea or draft)
+  - Enforces structured output templates and strict section order.
+  - Requires separation of:
+    - **Confirmed Information**
+    - **Assumptions**
+    - **Clarification Needed**
+    - **AI-Suggested**
+  - Requires an **Executive Snapshot** with readiness/maturity/risk scoring.
+  - Includes BFS-specific checks:
+    - PCI DSS impact
+    - authentication controls
+    - audit trail
+    - fraud prevention
+  - Requires generation of acceptance criteria, validation rules, NFRs, security requirements, and test scenarios.
+  - Emphasizes measurable/testable wording and evidence-based scoring.
+
+- **Capabilities**
+  - Includes `CodeInterpreter`, so the agent can use computation/tooling support where enabled.
+
+---
+
+### Agent capability summary
+
+In practical terms, this agent is designed to:
+
+1. **Assess requirement quality** with numeric score and readiness indicators.
+2. **Find gaps and risks** (ambiguity, missing validations, compliance/security omissions).
+3. **Improve or rewrite requirements** into clearer, testable, delivery-ready form.
+4. **Generate QE artifacts**:
+   - acceptance criteria (Given/When/Then)
+   - validation rules
+   - non-functional requirements
+   - security requirements
+   - test scenarios (positive/negative/boundary/error/security/fraud/integration/compliance)
+5. **Perform BFS compliance-oriented review** for key control domains.
+6. **Estimate improvement potential** after clarification/refinement.
+
+If you want, I can also provide a **compact “field-by-field JSON map”** of this file for quick onboarding/documentation.
+
+## Capabilities defined
+
+### 1) Technical capability (manifest)
+- **CodeInterpreter** (`"capabilities": [{"name":"CodeInterpreter"}]`)
+
+### 2) Functional capabilities (instructional behavior)
+- Requirement **review/evaluation** (existing drafts, stories, BRD excerpts, ACs)
+- Requirement **authoring/refinement/rewriting**
+- Quality scoring and readiness assessment
+- Gap detection (ambiguity, missing rules, missing NFR/security/validation)
+- Clarification question generation
+- Risk, impact, and INVEST analysis
+- BFS compliance/control review
+- QE artifact generation:
+  - acceptance criteria
+  - validation rules
+  - NFRs
+  - security requirements
+  - test scenarios (positive/negative/boundary/error/security/fraud/integration/compliance)
+
+---
+
+## Quality dimensions defined
+
+From visible `# Quality Scoring` text, dimensions explicitly listed:
+- **Clarity and unambiguous wording**
+- **Completeness** (actors, triggers, outcomes, business rules, validations, exceptions, dependencies, constraints)
+- **Testability and measurability**
+- **Security** *(line is truncated as `securi...`, so full trailing dimensions are not fully visible in the provided file excerpt)*
+
+---
+
+## Scoring/readiness mechanisms defined
+
+- **Original Quality Score**: numeric score out of **100**
+- **Readiness ratings**:
+  - Development Readiness: Ready / Partially Ready / Not Ready
+  - Test Readiness: Ready / Partially Ready / Not Ready
+  - Release Readiness: Ready / Partially Ready / Not Ready
+- **Requirement Maturity**: Draft / Needs Refinement / Review Ready / Release Ready
+- **Overall Risk**: High / Medium / Low
+- **Expected Improvement**:
+  - Quality Score: `[Original]/100 → [Estimated Improved]/100`
+  - Requirement Maturity: `[Current] → [Estimated]`
+- **Dynamic scoring rule**: values must be calculated from submitted requirement; no hardcoded examples
+- **Evidence rule**: scores/risks/impacts/recommendations must tie to requirement evidence
+
+---
+
+## Output sections defined
+
+### Review Mode output order (13 sections)
+1. Review Mode  
+2. Executive Snapshot  
+3. Expected Improvement  
+4. Impact Analysis  
+5. Top 3 Issues  
+6. Recommended Actions  
+7. Potential Defects Prevented  
+8. Banking Compliance Review  
+9. Requirement Analysis  
+10. Review-and-Improvement Package  
+11. Enhanced Requirement Reassessment  
+12. Value Realized  
+13. Requirement Health Dashboard  
+
+### Review-and-Improvement Package subsections
+1. Original Requirement  
+2. Review Findings  
+3. Recommended Improved Requirement  
+4. AI-Generated Acceptance Criteria  
+5. AI-Generated Validation Rules  
+6. AI-Generated Non-Functional Requirements  
+7. AI-Generated Security Requirements  
+8. AI-Generated Test Scenarios  
+
+### Authoring Mode output order (16 sections)
+1. Authoring Mode  
+2. Executive Snapshot  
+3. Expected Improvement  
+4. Original Requirement  
+5. Missing Information and Assumptions  
+6. Clarification Questions  
+7. Enhanced Requirement Draft  
+8. Refined User Story  
+9. AI-Generated Acceptance Criteria  
+10. AI-Generated Validation Rules  
+11. AI-Generated Non-Functional Requirements  
+12. AI-Generated Security Requirements  
+13. AI-Generated Test Scenarios  
+14. Enhanced Requirement Reassessment  
+15. Value Realized  
+16. Requirement Health Dashboard  
+
+---
+
+## BFS controls defined
+
+### Banking Compliance Review controls
+- **PCI DSS Impact**: Applicable / Not Applicable / Needs Assessment
+- **Authentication Controls**: Present / Missing / Needs Assessment
+- **Audit Trail Requirements**: Present / Missing / Needs Assessment
+- **Fraud Prevention Controls**: Present / Missing / Needs Assessment
+
+### Additional BFS control expectations in instructions
+- Include relevant **validation**, **auditability**, **fraud**, **security**, **compliance**, **exception handling**, and **traceability** considerations.
+
+
+Date Exported:
+04-Sep-2026
+Analysis Generated Using:
+GitHub Copilot in VS Code
+Purpose:
+To document the exported M365 Agent Builder implementation of the
+Agentic QE Requirement Advisor.
+
+
