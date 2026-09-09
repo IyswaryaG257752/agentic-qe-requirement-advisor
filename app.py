@@ -129,9 +129,55 @@ def analyze_requirement(text: str) -> dict:
     t = text.lower().strip()
     text_len = len(t)
 
-    clarity_hits = keyword_hits(t, ["must", "shall", "required"])
-    completeness_hits = keyword_hits(t, ["validate", "mandatory", "field", "input"])
-    testability_hits = keyword_hits(t, ["test", "verify", "expected"])
+    clarity_hits = keyword_hits(
+        t,
+        [
+            "must",
+            "shall",
+            "required",
+            "user",
+            "customer",
+            "system",
+            "application",
+            "service"
+        ]
+    )
+
+    completeness_hits = keyword_hits(
+        t,
+        [
+            "validate",
+            "mandatory",
+            "field",
+            "input",
+            "loan",
+            "account",
+            "customer",
+            "transaction",
+            "payment",
+            "balance"
+        ]
+    )
+
+    testability_hits = keyword_hits(
+        t,
+        [
+            "test",
+            "verify",
+            "expected",
+            "response",
+            "error",
+            "success",
+            "reject",
+            "approve",
+            "validate",
+            "mandatory",
+            "input",
+            "submission",
+            "transaction",
+            "account"
+        ]
+    )
 
     structure_hits = keyword_hits(t, ["if", "when", "then", "within"])
     measurable_hits = keyword_hits(t, ["%", "seconds", "ms", "days", "hours"])
@@ -150,6 +196,10 @@ def analyze_requirement(text: str) -> dict:
     completeness = bounded(completeness)
     testability = bounded(testability)
     quality_score = round((clarity + completeness + testability) / 3, 1)
+
+    if quality_score > 95:
+        quality_score = 95
+
     maturity_level = get_maturity_level(quality_score)
 
     pci_dss = keyword_hits(t, ["pci", "pci dss", "cardholder"]) > 0
@@ -451,7 +501,6 @@ if analyze_clicked:
 
         analyzed = analyze_requirement(req_text)
 
-#       st.write(analyzed.keys())
         st.session_state.clarity = analyzed["clarity"]
         st.session_state.completeness = analyzed["completeness"]
         st.session_state.testability = analyzed["testability"]
@@ -557,27 +606,20 @@ improvement_potential = f"{improvement_points} pts ({improvement_band(quality_sc
 
 analysis_completed = st.session_state.ai_advisory is not None
 
-# Show dashboard sections only after analysis has been run
-if st.session_state.ai_advisory is None:
-    st.info(
-        "📋 Paste a requirement and click 'Analyze Requirement' to generate scores, advisory insights, compliance assessment, risk indicators, and QE recommendations."
-    )
+# ---------- Analysis Display Gate ----------
+# Show analysis sections only after a successful analysis
+analysis_completed = (
+    st.session_state.get("ai_advisory") is not None
+    and bool(st.session_state.get("requirement_text", "").strip())
+)
+
+if not analysis_completed:
+    # Keep only requirement input + action buttons visible
     st.stop()
 
 
 # ---------- Executive Snapshot ----------
-calculated_quality = round((clarity + completeness + testability) / 3, 1)
-if auto_score:
-    quality_score = calculated_quality
-    st.session_state.manual_quality_score = calculated_quality
-else:
-    quality_score = st.number_input(
-        "Quality Score",
-        min_value=0.0,
-        max_value=100.0,
-        step=0.1,
-        key="manual_quality_score",
-    )
+quality_score = st.session_state.manual_quality_score
 
 maturity_level = get_maturity_level(quality_score)
 maturity_help = """Requirement Maturity Model
@@ -722,4 +764,16 @@ st.markdown(
     </style>
     """,
     unsafe_allow_html=True,
+)
+
+prompt_text = (
+    "AI Recommendation:\n"
+    "• Add measurable response criteria\n"
+    "• Define validation rules\n"
+    "• Include negative scenarios\n"
+    "• Specify error handling\n\n"
+    "AI Recommendation:\n"
+    "Requirement appears review-ready.\n"
+    "Consider adding regulatory references and non-functional requirements "
+    "to further strengthen QE readiness."
 )
