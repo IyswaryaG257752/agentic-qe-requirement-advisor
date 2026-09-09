@@ -1,9 +1,50 @@
 import streamlit as st
 import pandas as pd
 
+if "show_analysis" not in st.session_state:
+    st.session_state.show_analysis = False
+
 st.set_page_config(page_title="Agentic QE Requirement Advisor", layout="wide")
-st.title("🏦 Agentic QE Requirement Advisor")
+if not st.session_state.show_analysis:
+
+#    st.title("🤖 Agentic QE Requirement Advisor")
+
+    st.markdown("""
+<div style="
+background: linear-gradient(135deg,#0B3D91,#0066CC);
+padding:30px;
+border-radius:16px;
+color:white;
+margin-bottom:20px;
+">
+
+<h1 style="margin:0;color:white;">
+🤖 Agentic QE Requirement Advisor
+</h1>
+
+<p style="font-size:20px;color:white;">
+Transform Ambiguous Requirements into Test-Ready Specifications
+</p>
+
+<p style="color:white;">
+Requirements Quality | Testability | Acceptance Criteria | QE Scenarios
+</p>
+
+</div>
+""", unsafe_allow_html=True)
+
+    if st.button("🚀 Start Requirement Analysis"):
+        st.session_state.show_analysis = True
+        st.rerun()
+
+    st.stop()
+
+if st.button("⬅ Back to Home"):
+    st.session_state.show_analysis = False
+    st.rerun()
+
 st.caption("AI-Powered BFS Requirement Quality Engineering Assistant")
+
 
 # ---------- Session State Defaults ----------
 defaults = {
