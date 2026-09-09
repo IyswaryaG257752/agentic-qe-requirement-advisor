@@ -5,6 +5,29 @@ if "show_analysis" not in st.session_state:
     st.session_state.show_analysis = False
 
 st.set_page_config(page_title="Agentic QE Requirement Advisor", layout="wide")
+
+st.markdown(
+    """
+    <style>
+
+    .stApp {
+        background: linear-gradient(
+            180deg,
+            #F7FAFF 0%,
+            #EEF4FF 100%
+        );
+    }
+
+    [data-testid="stHeader"] {
+        background: transparent;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 if not st.session_state.show_analysis:
 
 #    st.title("🤖 Agentic QE Requirement Advisor")
@@ -43,13 +66,26 @@ if st.button("⬅ Back to Home"):
     st.session_state.show_analysis = False
     st.rerun()
 
-st.caption("AI-Powered BFS Requirement Quality Engineering Assistant")
+st.markdown(
+    "<p style='color:#0B3D91;font-size:14px;font-weight:600;'>🏦 AI-Powered BFS Requirement Quality Engineering Assistant</p>",
+    unsafe_allow_html=True,
+)
 
-
+st.markdown(
+    """
+    <div style="display:flex;align-items:center;gap:8px;margin:0 0 8px 0;">
+        <img src="https://img.icons8.com/fluency/32/bank-building.png" alt="BFS" style="width:22px;height:22px;" />
+        <span style="color:#0B3D91;font-size:12px;font-weight:600;">
+            Specialized for Banking &amp; Financial Services (BFS) Requirements
+        </span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 # ---------- Session State Defaults ----------
 defaults = {
     "requirement_text": "",
-    "requirement_id": "REQ-001",
+    "requirement_id": " ",
     "auto_score": True,
     "clarity": 75,
     "completeness": 70,
@@ -61,6 +97,7 @@ defaults = {
     "fraud_prevention": False,
     "ai_advisory": None,
     "advisory_report_text": "",
+    "clear_request": False,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -74,6 +111,18 @@ def bounded(score: float) -> int:
 def keyword_hits(text: str, keywords: list[str]) -> int:
     t = text.lower()
     return sum(1 for kw in keywords if kw in t)
+
+
+def get_maturity_level(quality_score: float) -> str:
+    if quality_score < 40:
+        return "📄 Level 1 - Initial"
+    if quality_score <= 59:
+        return "📝 Level 2 - Draft"
+    if quality_score <= 74:
+        return "✅ Level 3 - Defined"
+    if quality_score <= 89:
+        return "🚀 Level 4 - Review Ready"
+    return "🏆 Level 5 - QE Ready"
 
 
 def analyze_requirement(text: str) -> dict:
@@ -101,6 +150,7 @@ def analyze_requirement(text: str) -> dict:
     completeness = bounded(completeness)
     testability = bounded(testability)
     quality_score = round((clarity + completeness + testability) / 3, 1)
+    maturity_level = get_maturity_level(quality_score)
 
     pci_dss = keyword_hits(t, ["pci", "pci dss", "cardholder"]) > 0
     auth_controls = keyword_hits(t, ["authentication", "auth", "login", "password", "mfa", "otp"]) > 0
@@ -119,6 +169,7 @@ def analyze_requirement(text: str) -> dict:
         "completeness": completeness,
         "testability": testability,
         "quality_score": quality_score,
+        "maturity_level": maturity_level,
         "risk_level": risk_level,
         "readiness": readiness,
         "pci_dss": pci_dss,
@@ -331,6 +382,11 @@ Requirement Text:
 
 
 # ---------- Requirement Input ----------
+
+if st.session_state.get("clear_request", False):
+    st.session_state.requirement_text = ""
+    st.session_state.clear_request = False
+
 st.text_area(
     "Requirement Text",
     key="requirement_text",
@@ -338,59 +394,123 @@ st.text_area(
     height=180,
 )
 
-# ---------- Analyze Button ----------
-if st.button("Analyze Requirement", type="primary", use_container_width=True):
+st.markdown(
+    """
+    <style>
+    div[data-testid="stHorizontalBlock"] > div:nth-child(2) div[data-testid="stButton"] > button {
+        background-color: #d32f2f !important;
+        color: #ffffff !important;
+        border: 1px solid #b71c1c !important;
+    }
+    div[data-testid="stHorizontalBlock"] > div:nth-child(2) div[data-testid="stButton"] > button:hover {
+        background-color: #b71c1c !important;
+        color: #ffffff !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ---------- Analyze / Clear Buttons ----------
+col_a, col_b = st.columns(2)
+
+with col_a:
+    analyze_clicked = st.button(
+        "Analyze Requirement",
+        type="primary",
+        use_container_width=True
+    )
+
+with col_b:
+    if st.button(
+        "🗑 Clear Requirement",
+        use_container_width=True
+    ):
+        st.session_state.ai_advisory = None
+        st.session_state.advisory_report_text = ""
+
+        st.session_state.clarity = 75
+        st.session_state.completeness = 70
+        st.session_state.testability = 72
+        st.session_state.manual_quality_score = 72.3
+
+        st.session_state.clear_request = True
+
+        st.rerun()
+
+# ---------- Analyze Logic ----------
+
+if analyze_clicked:
+
     req_text = st.session_state.requirement_text.strip()
+
     if not req_text:
         st.warning("Please paste requirement text before analyzing.")
+
     else:
+
         analyzed = analyze_requirement(req_text)
+
+#       st.write(analyzed.keys())
         st.session_state.clarity = analyzed["clarity"]
         st.session_state.completeness = analyzed["completeness"]
         st.session_state.testability = analyzed["testability"]
         st.session_state.manual_quality_score = analyzed["quality_score"]
+        
+#       st.session_state.explainable_scoring = analyzed["explainable_scoring"]
+
         st.session_state.pci_dss = analyzed["pci_dss"]
         st.session_state.auth_controls = analyzed["auth_controls"]
         st.session_state.audit_trail = analyzed["audit_trail"]
         st.session_state.fraud_prevention = analyzed["fraud_prevention"]
 
         advisory = build_ai_advisory(req_text, analyzed)
+
         st.session_state.ai_advisory = advisory
         st.session_state.advisory_report_text = generate_advisory_report(
-            st.session_state.requirement_id, req_text, analyzed, advisory
+            st.session_state.requirement_id,
+            req_text,
+            analyzed,
+            advisory,
         )
 
-        st.success("Analysis complete. Scores, snapshot, compliance, advisory report, and charts updated.")
+        st.success(
+            "Analysis is completed. Scores, Snapshot and Advisory report are updated. Its ready to download."
+        )
 
 # ---------- Inputs ----------
-col1, col2 = st.columns([2, 1])
 
-with col1:
-    requirement_id = st.text_input("Requirement ID", key="requirement_id")
-with col2:
-    auto_score = st.toggle("Auto-calculate Quality Score", key="auto_score")
+if st.session_state.ai_advisory is not None:
 
-c1, c2, c3 = st.columns(3)
-with c1:
-    clarity = st.slider("Clarity Score", 0, 100, key="clarity")
-with c2:
-    completeness = st.slider("Completeness Score", 0, 100, key="completeness")
-with c3:
-    testability = st.slider("Testability Score", 0, 100, key="testability")
+    # UI removed; keep values for downstream logic compatibility
+    requirement_id = st.session_state.get("requirement_id", "")
+    auto_score = st.session_state.get("auto_score", True)
 
-calculated_quality = round((clarity + completeness + testability) / 3, 1)
-if auto_score:
-    quality_score = calculated_quality
-    st.session_state.manual_quality_score = calculated_quality
-else:
-    quality_score = st.number_input(
-        "Quality Score",
-        min_value=0.0,
-        max_value=100.0,
-        step=0.1,
-        key="manual_quality_score",
-    )
+    c1, c2, c3 = st.columns(3)
 
+    with c1:
+        clarity = st.slider(
+            "Clarity Score",
+            0,
+            100,
+            key="clarity"
+        )
+
+    with c2:
+        completeness = st.slider(
+            "Completeness Score",
+            0,
+            100,
+            key="completeness"
+        )
+
+    with c3:
+        testability = st.slider(
+            "Testability Score",
+            0,
+            100,
+            key="testability"
+        )
 # ---------- Risk logic ----------
 def risk_level(score: float) -> str:
     if score < 50:
@@ -419,6 +539,11 @@ def improvement_band(score: float) -> str:
 
 
 requirement_text = st.session_state.requirement_text
+
+clarity = st.session_state.clarity
+completeness = st.session_state.completeness
+testability = st.session_state.testability
+quality_score = st.session_state.manual_quality_score
 ambiguity_risk = risk_level(clarity)
 coverage_gap_risk = risk_level(completeness)
 validation_risk = risk_level(testability)
@@ -430,13 +555,55 @@ readiness = readiness_level(quality_score, requirement_text)
 improvement_points = round(100 - float(quality_score), 1)
 improvement_potential = f"{improvement_points} pts ({improvement_band(quality_score)})"
 
+analysis_completed = st.session_state.ai_advisory is not None
+
+# Show dashboard sections only after analysis has been run
+if st.session_state.ai_advisory is None:
+    st.info(
+        "📋 Paste a requirement and click 'Analyze Requirement' to generate scores, advisory insights, compliance assessment, risk indicators, and QE recommendations."
+    )
+    st.stop()
+
+
 # ---------- Executive Snapshot ----------
+calculated_quality = round((clarity + completeness + testability) / 3, 1)
+if auto_score:
+    quality_score = calculated_quality
+    st.session_state.manual_quality_score = calculated_quality
+else:
+    quality_score = st.number_input(
+        "Quality Score",
+        min_value=0.0,
+        max_value=100.0,
+        step=0.1,
+        key="manual_quality_score",
+    )
+
+maturity_level = get_maturity_level(quality_score)
+maturity_help = """Requirement Maturity Model
+
+📄 Level 1 - Initial
+Requirement is vague, ambiguous, and incomplete.
+
+📝 Level 2 - Draft
+Basic requirement exists but important details are missing.
+
+✅ Level 3 - Defined
+Requirement is reasonably clear and testable.
+
+🚀 Level 4 - Review Ready
+Requirement is complete, testable, and suitable for QE review.
+
+🏆 Level 5 - QE Ready
+Requirement is highly detailed, testable, compliant, and ready for implementation and testing.
+"""
+
 st.subheader("Executive Snapshot")
 e1, e2, e3, e4 = st.columns(4)
 e1.metric("Quality Score", f"{quality_score}/100")
-e2.metric("Readiness", readiness)
-e3.metric("Risk Level", overall_risk)
-e4.metric("Improvement Potential", improvement_potential)
+e2.metric("Requirement Maturity Level", maturity_level, help=maturity_help)
+e3.metric("Readiness", readiness)
+e4.metric("Risk Level", overall_risk)
 
 # ---------- AI Advisory Summary ----------
 st.subheader("AI Advisory Summary")
@@ -461,33 +628,39 @@ else:
     st.markdown("Run **Analyze Requirement** to generate advisory insights.")
 
 # ---------- BFS Compliance Assessment ----------
-st.subheader("BFS Compliance Assessment")
-b1, b2, b3, b4 = st.columns(4)
-with b1:
-    pci_dss = st.checkbox("PCI DSS", key="pci_dss")
-with b2:
-    auth_controls = st.checkbox("Authentication Controls", key="auth_controls")
-with b3:
-    audit_trail = st.checkbox("Audit Trail", key="audit_trail")
-with b4:
-    fraud_prevention = st.checkbox("Fraud Prevention", key="fraud_prevention")
 
-controls = [pci_dss, auth_controls, audit_trail, fraud_prevention]
-coverage_pct = round((sum(controls) / len(controls)) * 100, 1)
-st.metric("Compliance Coverage", f"{coverage_pct}%")
+pci_dss = st.session_state.get("pci_dss", False)
+auth_controls = st.session_state.get("auth_controls", False)
+audit_trail = st.session_state.get("audit_trail", False)
+fraud_prevention = st.session_state.get("fraud_prevention", False)
 
+show_bfs_section = (
+    pci_dss
+    or auth_controls
+    or audit_trail
+    or fraud_prevention
+)
+
+if show_bfs_section:
+    st.subheader("BFS Compliance Assessment")
+    b1, b2, b3, b4 = st.columns(4)
+    with b1:
+        pci_dss = st.checkbox("PCI DSS", key="pci_dss")
+    with b2:
+        auth_controls = st.checkbox("Authentication Controls", key="auth_controls")
+    with b3:
+        audit_trail = st.checkbox("Audit Trail", key="audit_trail")
+    with b4:
+        fraud_prevention = st.checkbox("Fraud Prevention", key="fraud_prevention")
+
+    controls = [pci_dss, auth_controls, audit_trail, fraud_prevention]
+    coverage_pct = round((sum(controls) / len(controls)) * 100, 1)
+    st.metric("Compliance Coverage", f"{coverage_pct}%")
+    
 # ---------- Dashboard ----------
-st.subheader("Scores")
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("Requirement ID", requirement_id if requirement_id else "N/A")
-m2.metric("Quality Score", f"{quality_score}/100")
-m3.metric("Clarity Score", f"{clarity}/100")
-m4.metric("Completeness Score", f"{completeness}/100")
-st.metric("Testability Score", f"{testability}/100")
-
-st.progress(int(quality_score), text=f"Overall Quality: {quality_score}/100")
 
 st.subheader("Quality Risk Indicators")
+
 risk_df = pd.DataFrame(
     {
         "Indicator": [
@@ -499,16 +672,17 @@ risk_df = pd.DataFrame(
         "Level": [ambiguity_risk, coverage_gap_risk, validation_risk, overall_risk],
     }
 )
-st.dataframe(risk_df, use_container_width=True, hide_index=True)
+st.table(risk_df)
 
-st.subheader("Dimension Comparison")
-chart_df = pd.DataFrame(
-    {
-        "Dimension": ["Clarity", "Completeness", "Testability", "Overall Quality"],
-        "Score": [clarity, completeness, testability, quality_score],
-    }
-).set_index("Dimension")
-st.bar_chart(chart_df)
+# REMOVE this entire section:
+# st.subheader("Dimension Comparison")
+# chart_df = pd.DataFrame(
+#     {
+#         "Dimension": ["Clarity", "Completeness", "Testability", "Overall Quality"],
+#         "Score": [clarity, completeness, testability, quality_score],
+#     }
+# ).set_index("Dimension")
+# st.bar_chart(chart_df)
 
 # ---------- Advisory Report ----------
 st.subheader("Advisory Report")
@@ -527,7 +701,25 @@ else:
     st.info("Run **Analyze Requirement** to generate the advisory report.")
 
 if requirement_text.strip():
-    st.caption(f"Requirement text captured ({len(requirement_text)} characters).")
+#    st.caption(f"Requirement text captured ({len(requirement_text)} characters).")
+     st.caption("✅ Report generated successfully")
 else:
     st.caption("No requirement text provided yet.")
-    
+
+st.markdown(
+    """
+    <style>
+    div[data-testid="stDownloadButton"] > button {
+        background-color: #66BB6A !important;  /* light green */
+        color: #FFFFFF !important;             /* white text */
+        font-weight: 700 !important;           /* bold */
+        border: 1px solid #4CAF50 !important;
+    }
+    div[data-testid="stDownloadButton"] > button:hover {
+        background-color: #4CAF50 !important;  /* darker on hover */
+        color: #FFFFFF !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
