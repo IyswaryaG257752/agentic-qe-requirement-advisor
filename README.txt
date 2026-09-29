@@ -1,5 +1,4 @@
 Agentic QE Requirement Advisor -BFS AI Hackathon Project 
-Created by Iyswarya G [257752]
 
 -The agent is specialized for BFS Quality Engineering and evaluates requirement quality, compliance, testability, completeness, security, and test readiness using a structured review framework.
 
